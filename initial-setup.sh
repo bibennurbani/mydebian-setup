@@ -9,6 +9,11 @@ get_input() {
 }
 
 # Step 1: Update and upgrade packages
+echo "Adding contrib and non-free to package sources..."
+sed -i '/^deb.*bookworm main$/ s/$/ contrib non-free/' /etc/apt/sources.list
+sed -i '/^deb.*bookworm-updates main$/ s/$/ contrib non-free/' /etc/apt/sources.list
+sed -i '/^deb.*bookworm-security main$/ s/$/ contrib non-free/' /etc/apt/sources.list
+
 echo "Updating and upgrading packages..."
 apt update && apt upgrade -y
 
