@@ -26,7 +26,15 @@ NETMASK=$(get_input "Enter the netmask" "255.255.255.0")
 GATEWAY=$(get_input "Enter the gateway" "192.168.1.1")
 DNS=$(get_input "Enter the DNS server" "8.8.8.8")
 
-cat <<EOL > /etc/network/interfaces
+# Backup the current interfaces file
+cp /etc/network/interfaces /etc/network/interfaces.bak
+
+# Comment out existing configurations
+sed -i 's/^\(iface\|auto\)/#&/' /etc/network/interfaces
+
+# Add new static IP configuration
+cat <<EOL >> /etc/network/interfaces
+
 auto $INTERFACE
 iface $INTERFACE inet static
     address $IP_ADDRESS
@@ -35,24 +43,29 @@ iface $INTERFACE inet static
     dns-nameservers $DNS
 EOL
 
-systemctl restart networking
-
 # Step 4: Install and configure SSH
 echo "Installing and configuring SSH..."
 apt install ssh -y
 
 SSH_PORT=$(get_input "Enter the SSH port" "2222")
 
+# Backup the current sshd_config file
+cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+
 # Configure SSH settings
 sed -i "s/#Port 22/Port $SSH_PORT/" /etc/ssh/sshd_config
 sed -i "s/#PermitRootLogin prohibit-password/PermitRootLogin no/" /etc/ssh/sshd_config
 sed -i "s/#PasswordAuthentication yes/PasswordAuthentication yes/" /etc/ssh/sshd_config
-systemctl restart sshd
 
 # Step 5: Install and enable UFW
 echo "Installing and enabling UFW..."
 apt install ufw -y
 ufw allow "$SSH_PORT"/tcp
 ufw enable
+
+# Restart services at the end
+echo "Restarting networking and SSH services..."
+systemctl restart networking
+systemctl restart sshd
 
 echo "Setup complete!"
